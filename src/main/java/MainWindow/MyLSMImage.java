@@ -75,16 +75,16 @@ public class MyLSMImage{
         imageStacks.add(new ImageStack(1,1));
     }
 
-    protected ImageStack calculateDiffrenceStack(double coef_chanel1, double coef_chanel2){
+    protected ImageStack calculateDiffrenceStack(ArrayList<Double> coefs){
         // calculate new stack like chanle1 - chanel2
-        int chanel1 = 0;
-        int chanel2 = 1;
-        int w = imageStacks.get(chanel1).getWidth();
-        int h = imageStacks.get(chanel1).getHeight();
+        int w = imageStacks.get(0).getWidth();
+        int h = imageStacks.get(0).getHeight();
         ImageStack newDifStack = new ImageStack(w, h, imp.getStack().getColorModel());
-        for (int i=1; i <= imageStacks.get(chanel1).getSize(); i++){
-            ImageProcessor pr1 = imageStacks.get(chanel1).getProcessor(i);
-            ImageProcessor pr2 = imageStacks.get(chanel2).getProcessor(i);
+        ArrayList<ImageProcessor> processorsOnCurrentLayer;
+        for (int i=1; i <= imageStacks.get(0).getSize(); i++){
+            processorsOnCurrentLayer = new ArrayList<>();
+            for (int chanelIndex=0; chanelIndex < coefs.size(); chanelIndex++)
+                processorsOnCurrentLayer.add(imageStacks.get(chanelIndex).getProcessor(i));
             ImageProcessor imProc;
             if (this.isGRAY8) {
                 imProc = new ByteProcessor(w, h);
@@ -92,9 +92,12 @@ public class MyLSMImage{
             else{
                 imProc = new ShortProcessor(w, h);
             }
-            for (int y=0; y < pr1.getHeight(); y++){
-                for (int x=0; x < pr1.getWidth(); x++){
-                    int pix = (int) Math.round(pr1.get(x, y)*coef_chanel1 + pr2.get(x, y)*coef_chanel2);
+            for (int y=0; y < processorsOnCurrentLayer.get(0).getHeight(); y++){
+                for (int x=0; x < processorsOnCurrentLayer.get(0).getWidth(); x++){
+                    double accumulatedValue = 0;
+                    for (int chanelIndex=0; chanelIndex < coefs.size(); chanelIndex++)
+                        accumulatedValue += processorsOnCurrentLayer.get(chanelIndex).get(x, y) * coefs.get(chanelIndex);
+                    int pix = (int) Math.round(accumulatedValue);
                     if (pix < 0) pix = 0;
                     imProc.set(x, y, pix);
                 }
@@ -472,8 +475,8 @@ public class MyLSMImage{
         return average_and_diffusion;
     }
 
-    public void setNewChannel(double ch1_coef, double ch2_coef){
-        ImageStack newStack = this.calculateDiffrenceStack(ch1_coef, ch2_coef);
+    public void setNewChannel(ArrayList<Double> coefs){
+        ImageStack newStack = this.calculateDiffrenceStack(coefs);
         imageStacks.set(new_channel_index, newStack);
     }
 

@@ -18,6 +18,7 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.stream.Collectors;
 
 
 public class MyWindow extends StackWindow implements ActionListener, ItemListener {
@@ -25,8 +26,9 @@ public class MyWindow extends StackWindow implements ActionListener, ItemListene
     protected Button buttonSaveAsTif, buttonSaveJpg, buttonApplyOffset, buttonDiffusion, buttonNormalization, buttonClean,
             buttonOpenSegmentation, buttonOpenImage, buttonNormalizationSlices, buttonCalcInfo,
             buttonCutSlices, buttonMorfSegmentation, cutButton, buttonGetFinalResult, to2DImage, getPixGraph;
-    private TextField curOffsetX, curOffsetY, curOffsetZ, normalizationParametr, MaxDiffField, diveField, deepField, latticeSizeField, cellSizeField, ch1CoefField, ch2CoefField;
-    private Label processingLabel, labelOffsetX, labelOffsetY, labelOffsetZ, diveLabel, latticeLabel, maxDiffLabel, cellSizeLabel, ch1CoefLabel, ch2CoefLabel;
+    private TextField curOffsetX, curOffsetY, curOffsetZ, normalizationParametr, MaxDiffField, diveField, deepField, latticeSizeField, cellSizeField;
+    private ArrayList<TextField> channelCoefFields;
+    private Label processingLabel, labelOffsetX, labelOffsetY, labelOffsetZ, diveLabel, latticeLabel, maxDiffLabel, cellSizeLabel;
     protected int channelsCount;
     public CheckboxGroup cbg;
     public ArrayList<Checkbox> chs;
@@ -179,14 +181,15 @@ public class MyWindow extends StackWindow implements ActionListener, ItemListene
         leftMenu.add(ch);
         chs.add(ch);
 
-        ch1CoefLabel = new Label("ch1 coef");
-        botPanel.add(ch1CoefLabel);
-        ch1CoefField = new TextField("1");
-        botPanel.add(ch1CoefField);
-        ch2CoefLabel = new Label("ch2 coef");
-        botPanel.add(ch2CoefLabel);
-        ch2CoefField = new TextField("-1");
-        botPanel.add(ch2CoefField);
+        channelCoefFields = new ArrayList<>();
+        for (int i=1; i < channelsCount; i++) {
+            Label chCoefLabel = new Label(String.format("ch%d coef", i));
+            botPanel.add(chCoefLabel);
+            TextField chCoefField = new TextField("1");
+            botPanel.add(chCoefField);
+            channelCoefFields.add(chCoefField);
+        }
+
         processingLabel = new Label("         ");
         botPanel.add(processingLabel);
 
@@ -212,7 +215,10 @@ public class MyWindow extends StackWindow implements ActionListener, ItemListene
     {
         int channel_index = Integer.parseInt(cbg.getSelectedCheckbox().getName());
         if (channel_index == channelsCount - 1) {
-            myimp.setNewChannel(Double.parseDouble(ch1CoefField.getText()), Double.parseDouble(ch2CoefField.getText()));
+            ArrayList<Double> coefficients = channelCoefFields.stream()
+                    .map(field -> Double.parseDouble(field.getText()))
+                    .collect(Collectors.toCollection(ArrayList::new));
+            myimp.setNewChannel(coefficients);
         }
         myimp.setChanel(channel_index);
     }
