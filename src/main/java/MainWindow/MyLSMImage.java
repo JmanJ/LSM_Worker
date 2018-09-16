@@ -18,8 +18,6 @@ public class MyLSMImage{
     protected ImagePlus curImp;
     protected ArrayList<ImageStack> imageStacks;
     public CZLSMInfo iminfo;
-    //protected Rotate rotator;
-    //protected Image img;
     private int MAX_OFFSET = 15;
     private int CUT_SIZE = 15;
     private int DEFAULT_OFFSET = 0;
