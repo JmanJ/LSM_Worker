@@ -9,17 +9,26 @@ import ij.io.OpenDialog;
 import ij.plugin.PlugIn;
 import ij.process.FloatProcessor;
 
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
 
 public class LSM_Worker implements PlugIn {
 
     public void run(final String arg){
-        OpenDialog od = new OpenDialog("Open LSM...");
-        String directory = od.getDirectory();
-        String name = od.getFileName();
-        if (name == null) return;
-        IJ.showStatus("Opening: " + directory + name);
+        JFileChooser chooser = new JFileChooser(OpenDialog.getLastDirectory());
+        chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        chooser.setMultiSelectionEnabled(false);
+        chooser.setFileFilter(new FileNameExtensionFilter("LSM File(*.lsm)", "lsm"));
+        int returnVal = chooser.showOpenDialog(null);
+
+        if (returnVal != JFileChooser.APPROVE_OPTION)
+            return;
+
+        String filePath = chooser.getSelectedFile().getAbsolutePath();
+        IJ.showStatus("Opening: " + filePath);
         Reader r = new Reader();
-        ImagePlus imp = r.open(directory + name);
+        ImagePlus imp = r.open(filePath);
         CZLSMInfo iminfo = r.getLsmInfo();
 
         MyDialogWindow d = new MyDialogWindow("LSM_Worker", iminfo);

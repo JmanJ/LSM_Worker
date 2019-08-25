@@ -26,9 +26,9 @@ public class MyWindow extends StackWindow implements ActionListener, ItemListene
     protected Button buttonSaveAsTif, buttonSaveJpg, buttonApplyOffset, buttonDiffusion, buttonNormalization, buttonClean,
             buttonOpenSegmentation, buttonOpenImage, buttonNormalizationSlices, buttonCalcInfo,
             buttonCutSlices, buttonMorfSegmentation, cutButton, buttonGetFinalResult, to2DImage, getPixGraph;
-    private TextField curOffsetX, curOffsetY, curOffsetZ, normalizationParametr, MaxDiffField, diveField, deepField, latticeSizeField, cellSizeField;
+    private TextField curOffsetX, curOffsetY, curOffsetZ, normalizationParametr, MaxDiffField, latticeSizeField, cellSizeField;
     private ArrayList<TextField> channelCoefFields;
-    private Label processingLabel, labelOffsetX, labelOffsetY, labelOffsetZ, diveLabel, latticeLabel, maxDiffLabel, cellSizeLabel;
+    private Label processingLabel, labelOffsetX, labelOffsetY, labelOffsetZ, latticeLabel, maxDiffLabel, cellSizeLabel;
     protected int channelsCount;
     public CheckboxGroup cbg;
     public ArrayList<Checkbox> chs;
@@ -136,10 +136,6 @@ public class MyWindow extends StackWindow implements ActionListener, ItemListene
         buttonGetFinalResult.addActionListener(this);
         centerMenu.add(buttonGetFinalResult);
 
-        diveLabel = new Label("Diving value");
-        centerMenu2.add(diveLabel, BorderLayout.SOUTH);
-        diveField = new TextField("5");
-        centerMenu2.add(diveField, BorderLayout.SOUTH);
         latticeLabel = new Label("Lattice size");
         centerMenu2.add(latticeLabel, BorderLayout.SOUTH);
         latticeSizeField = new TextField("5");
@@ -357,8 +353,10 @@ public class MyWindow extends StackWindow implements ActionListener, ItemListene
 
         if (b==to2DImage){
             processingLabel.setText("Processing...");
-            ImagePlus image2d = myimp.convertTo2DImage(Integer.parseInt(diveField.getText()),
-                    Integer.parseInt(latticeSizeField.getText()), Integer.parseInt(MaxDiffField.getText()));
+            ImagePlus image2d = myimp.convertTo2DImage(
+                    Integer.parseInt(latticeSizeField.getText()),
+                    Integer.parseInt(MaxDiffField.getText())
+            );
             image2DWind = new Image2DWindow(image2d, myimp.iminfo, myimp.get2DProc());
             image2DWind.setVisible(true);
             processingLabel.setText("Done");

@@ -13,11 +13,12 @@ public class Image2DProcessor{
     private int latticeH;
     private int latticeW;
     private int step;
+    private int diveValue = 0;
     private ImageProcessor maskProc = null;
     private ImageProcessor curProc = null;
     private ImageStack image3DStack;
 
-    public ImagePlus calculateSurface(ImageStack stack, int diveValue, int latticeValue, int maxDiff){
+    public ImagePlus calculateSurface(ImageStack stack, int latticeValue, int maxDiff){
         image3DStack = stack;
         h = stack.getProcessor(1).getHeight();
         w = stack.getProcessor(1).getWidth();
@@ -67,18 +68,17 @@ public class Image2DProcessor{
             }
         }
         //System.out.print(Arrays.deepToString(lattice));
-        return constructProcessor(lattice, diveValue, stack.getSize());
+        return constructProcessor(lattice, stack.getSize());
     }
 
-    private ImagePlus constructProcessor(int[][] lattice, int diveValue, int stackSize) {
+    private ImagePlus constructProcessor(int[][] lattice, int stackSize) {
         maskProc = new ByteProcessor(w, h);
         if (image3DStack.getBitDepth() == ImagePlus.GRAY8)
             curProc = new ByteProcessor(w, h);
         else
             curProc = new ShortProcessor(w, h);
         float dys1, dys2, dxs;
-        int z1, z2, curz, dive;
-        boolean fl;
+        int z1, z2, curz;
         for (int y = 0, j = 0; j < latticeH - 1; y+= step, j++) {
             for (int x = 0, i = 0; i < latticeW - 1; x+= step, i++) {
                 dys1 = (lattice[i][j+1] -  lattice[i][j])/(float) step;
@@ -91,23 +91,8 @@ public class Image2DProcessor{
                     dxs = (z2 - z1)/(float) step;
                     curz = z1;
                     for (int x1 = x, it2 = 1; x1 < x + step; x1++, it2++){
-                        if (diveValue >= 0)
-                            dive = diveValue;
-                        else
-                            dive = 0;
-
-                        fl = true;
-                        while (fl) {
-                            try {
-                                curProc.putPixel(x1, y1, image3DStack.getProcessor(curz + dive).get(x1, y1));
-                                int testColor = curz + dive;
-                                maskProc.putPixel(x1, y1, testColor);
-                                fl = false;
-                            } catch (IllegalArgumentException e) {
-                                dive--;
-                            }
-                        }
-
+                        curProc.putPixel(x1, y1, image3DStack.getProcessor(curz).get(x1, y1));
+                        maskProc.putPixel(x1, y1, curz);
                         curz = Math.round(z1 + dxs*it2);
                     }
                     z1 = Math.round(lattice[i][j] + dys1*it1);
@@ -138,8 +123,8 @@ public class Image2DProcessor{
         int zIndex;
         for (int y = 0; y < maskProc.getHeight(); y++)
             for (int x = 0; x < maskProc.getWidth(); x++){
-                zIndex = maskProc.get(x, y);
-                if (zIndex == 0) zIndex = 1;
+                zIndex = maskProc.get(x, y) + diveValue;
+                if (zIndex <= 0) zIndex = 1;
                 if (zIndex > image3DStack.getSize()) zIndex = image3DStack.getSize();
                 curProc.set(x, y, image3DStack.getProcessor(zIndex).get(x, y));
             }
@@ -152,6 +137,10 @@ public class Image2DProcessor{
 
     public ImagePlus getMaskImage(){
         return new ImagePlus("Mask image", maskProc);
+    }
+
+    public void setDiveValue(int diveValue) {
+        this.diveValue = diveValue;
     }
 
     public void setImageMask(ImageProcessor newMaskProc){

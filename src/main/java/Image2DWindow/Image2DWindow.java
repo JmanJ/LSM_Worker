@@ -21,9 +21,9 @@ import java.awt.event.ItemListener;
 
 public class Image2DWindow extends ImageWindow implements ActionListener, ItemListener {
 
-    private Button buttonMorfSegmentation, buttonSaveTiff, buttonLoadTiff, buttonDiffusion, buttonSmooth;
-    private Label processingLabel, filterSizeLabel, timesLabel;
-    private TextField filterSizeField, timesField;
+    private Button buttonMorfSegmentation, buttonSaveTiff, buttonLoadTiff, buttonDiffusion, buttonSmooth, buttonGet2DImage;
+    private Label processingLabel, filterSizeLabel, timesLabel, diveLabel;
+    private TextField filterSizeField, timesField, diveField;
     private Checkbox isMaskImage;
     private CZLSMInfo info;
     protected MorphologicalSegmentation morphologicalSegmentation;
@@ -46,6 +46,14 @@ public class Image2DWindow extends ImageWindow implements ActionListener, ItemLi
         isMaskImage.setState(false);
         isMaskImage.addItemListener(this);
         panel.add(isMaskImage);
+
+        diveLabel = new Label("Diving value");
+        panel.add(diveLabel, BorderLayout.SOUTH);
+        diveField = new TextField("0");
+        panel.add(diveField, BorderLayout.SOUTH);
+        buttonGet2DImage = new Button("Update");
+        buttonGet2DImage.addActionListener(this);
+        panel.add(buttonGet2DImage);
 
         buttonMorfSegmentation = new Button("MorfSegmentation");
         buttonMorfSegmentation.addActionListener(this);
@@ -88,16 +96,16 @@ public class Image2DWindow extends ImageWindow implements ActionListener, ItemLi
     public void itemStateChanged(ItemEvent e)
     {
         if (isMaskImage.getState()){
-            this.getImagePlus().setProcessor(im2dproc.getMaskProc());
+            getImagePlus().setProcessor(im2dproc.getMaskProc());
             buttonSmooth.setEnabled(true);
         }
         else{
-            im2dproc.setImageMask(this.getImagePlus().getProcessor());
-            this.getImagePlus().setProcessor(im2dproc.getCur2DProc());
+            im2dproc.setImageMask(getImagePlus().getProcessor());
+            getImagePlus().setProcessor(im2dproc.getCur2DProc());
             buttonSmooth.setEnabled(false);
         }
-        this.repaint();
-        this.requestFocus();
+        repaint();
+        requestFocus();
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -118,16 +126,23 @@ public class Image2DWindow extends ImageWindow implements ActionListener, ItemLi
             (new FileSaver(imp)).saveAsJpeg(path);
         }
         */
+        if (b==buttonGet2DImage) {
+            im2dproc.setDiveValue(Integer.parseInt(diveField.getText()));
+            if (!isMaskImage.getState()){
+                getImagePlus().setProcessor(im2dproc.getCur2DProc());
+                repaint();
+            }
+        }
         if (b==buttonSaveTiff){
             //FileInfo fi = myimp.getOriginalImage().getFileInfo();
             //imp.setProperty("jmanj", "haha");
             //imp.setCalibration(myimp.getOriginalImage().getCalibration());
             //imp.setTitle(imp.getShortTitle() + " ch" + cbg.getSelectedCheckbox().getName());
             //imp.setFileInfo(fi);
-            (new FileSaver(this.im2dproc.getMaskImage())).saveAsTiff();
+            (new FileSaver(im2dproc.getMaskImage())).saveAsTiff();
         }
 
-        if (b==buttonLoadTiff){
+        if (b==buttonLoadTiff) {
             OpenDialog od = new OpenDialog("Open image mask...");
             String name = od.getFileName();
             if (name==null)
@@ -135,34 +150,33 @@ public class Image2DWindow extends ImageWindow implements ActionListener, ItemLi
             String dir = od.getDirectory();
             String path = dir + name;
             ImagePlus new_imp = new ImagePlus(path);
-            this.im2dproc.setImageMask(new_imp.getProcessor());
+            im2dproc.setImageMask(new_imp.getProcessor());
             if (isMaskImage.getState()) {
-                this.getImagePlus().setProcessor(im2dproc.getMaskProc());
+                getImagePlus().setProcessor(im2dproc.getMaskProc());
             }
             else{
-                this.getImagePlus().setProcessor(im2dproc.getCur2DProc());
+                getImagePlus().setProcessor(im2dproc.getCur2DProc());
             }
-            this.repaint();
-            this.requestFocus();
+            repaint();
+            requestFocus();
         }
 
-        if (b==buttonSmooth){
+        if (b==buttonSmooth) {
             processingLabel.setText("Processing...");
             im2dproc.smooth2DImage(Integer.parseInt(filterSizeField.getText()), Integer.parseInt(timesField.getText()));
             if (isMaskImage.getState()){
-                this.getImagePlus().setProcessor(im2dproc.getMaskProc());
+                getImagePlus().setProcessor(im2dproc.getMaskProc());
             }
             else{
-                im2dproc.setImageMask(this.getImagePlus().getProcessor());
-                this.getImagePlus().setProcessor(im2dproc.getCur2DProc());
+                im2dproc.setImageMask(getImagePlus().getProcessor());
+                getImagePlus().setProcessor(im2dproc.getCur2DProc());
             }
-            this.repaint();
-            this.requestFocus();
+            repaint();
+            requestFocus();
             processingLabel.setText("Done");
         }
 
-        if (b==buttonDiffusion)
-        {
+        if (b==buttonDiffusion) {
             if (buttonDiffusion.getLabel() != "Get result") {
                 diffusion2D = new Anisotropic_Diffusion_2D(processingLabel);
                 diffusion2D.setup("", imp);
@@ -197,7 +211,6 @@ public class Image2DWindow extends ImageWindow implements ActionListener, ItemLi
                     //diffusion2D = null;
                 }
             }
-
         }
 
         if (b == buttonMorfSegmentation) {
@@ -235,6 +248,6 @@ public class Image2DWindow extends ImageWindow implements ActionListener, ItemLi
     }
 
     public ResultWindow getResultWindow(){
-        return this.resultWindow;
+        return resultWindow;
     }
 }

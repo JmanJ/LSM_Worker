@@ -591,10 +591,10 @@ public class MyLSMImage{
         refreshImage();
     }
 
-    public ImagePlus convertTo2DImage(int diveValue, int latticeValue, int maxDiff){
+    public ImagePlus convertTo2DImage(int latticeValue, int maxDiff){
         im2Dproc = new Image2DProcessor();
         this.maxDiff = maxDiff;
-        return im2Dproc.calculateSurface(imageStacks.get(chanel), diveValue, latticeValue, maxDiff);
+        return im2Dproc.calculateSurface(imageStacks.get(chanel), latticeValue, maxDiff);
     }
 
     public Image2DProcessor get2DProc(){
