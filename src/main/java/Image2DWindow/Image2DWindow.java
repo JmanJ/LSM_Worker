@@ -222,7 +222,6 @@ public class Image2DWindow extends ImageWindow implements ActionListener, ItemLi
             else{
 
                 //System.out.println(WindowManager.getImageCount());
-                //System.out.println("!!!");
                 //System.out.println(WindowManager.getIDList());
 
                 ImagePlus inputImage = null;
