@@ -3,14 +3,13 @@ package MainWindow;
 import LsmReader.CZLSMInfo;
 import ij.ImagePlus;
 import ij.ImageStack;
-import ij.process.ByteProcessor;
-import ij.process.ImageConverter;
-import ij.process.ImageProcessor;
-import ij.process.ShortProcessor;
+import ij.process.*;
 
 import java.awt.*;
+import java.awt.image.IndexColorModel;
 import java.util.ArrayList;
 
+import static Utilities.ColorUtilities.getColorPalette;
 
 public class MyLSMImage{
 
@@ -75,7 +74,7 @@ public class MyLSMImage{
         imageStacks.add(new ImageStack(1,1));
     }
 
-    protected ImageStack calculateDiffrenceStack(ArrayList<Double> coefs){
+    protected ImageStack calculateDiffrenceStack(ArrayList<Double> coefs, Color imageColor){
         // calculate new stack like chanle1 - chanel2
         int w = imageStacks.get(0).getWidth();
         int h = imageStacks.get(0).getHeight();
@@ -102,10 +101,10 @@ public class MyLSMImage{
                     imProc.set(x, y, pix);
                 }
             }
-            //imProc.setMinAndMax(imageStacks.get(chanel1).getProcessor(i).getMin(), imageStacks.get(chanel1).getProcessor(i).getMax());
-            //imProc.setColorModel(imageStacks.get(chanel1).getColorModel());
             newDifStack.addSlice(imProc);
         }
+
+        newDifStack.setColorModel(new IndexColorModel(8, 256, getColorPalette(imageColor, 256), 0, false));
 
         return newDifStack;
     }
@@ -475,8 +474,8 @@ public class MyLSMImage{
         return average_and_diffusion;
     }
 
-    public void setNewChannel(ArrayList<Double> coefs){
-        ImageStack newStack = this.calculateDiffrenceStack(coefs);
+    public void setNewChannel(ArrayList<Double> coefs, Color imageColor){
+        ImageStack newStack = this.calculateDiffrenceStack(coefs, imageColor);
         imageStacks.set(new_channel_index, newStack);
     }
 
