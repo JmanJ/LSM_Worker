@@ -26,7 +26,9 @@ public class MyWindow extends StackWindow implements ActionListener, ItemListene
     protected Button buttonSaveAsTif, buttonSaveJpg, buttonApplyOffset, buttonDiffusion, buttonNormalization, buttonClean,
             buttonOpenSegmentation, buttonOpenImage, buttonNormalizationSlices, buttonCalcInfo,
             buttonCutSlices, buttonMorfSegmentation, cutButton, buttonGetFinalResult, to2DImage, getPixGraph;
-    private TextField curOffsetX, curOffsetY, curOffsetZ, normalizationParametr, MaxDiffField, latticeSizeField, cellSizeField;
+    private TextField curOffsetX, curOffsetY, curOffsetZ, normalizationParametr, MaxDiffField, latticeSizeField,
+            cellSizeField;
+    private Checkbox newChannelColorRed, newChannelColorGreen, newChannelColorBlue;
     private ArrayList<TextField> channelCoefFields;
     private Label processingLabel, labelOffsetX, labelOffsetY, labelOffsetZ, latticeLabel, maxDiffLabel, cellSizeLabel;
     protected int channelsCount;
@@ -186,6 +188,15 @@ public class MyWindow extends StackWindow implements ActionListener, ItemListene
             channelCoefFields.add(chCoefField);
         }
 
+        CheckboxGroup newChannelColor = new CheckboxGroup();
+        newChannelColorRed = new Checkbox("Red", newChannelColor, true);
+        newChannelColorGreen = new Checkbox("Green", newChannelColor, false);
+        newChannelColorBlue = new Checkbox("Blue", newChannelColor, false);
+
+        botPanel.add(newChannelColorRed);
+        botPanel.add(newChannelColorGreen);
+        botPanel.add(newChannelColorBlue);
+
         processingLabel = new Label("         ");
         botPanel.add(processingLabel);
 
@@ -210,11 +221,14 @@ public class MyWindow extends StackWindow implements ActionListener, ItemListene
     public void itemStateChanged(ItemEvent e)
     {
         int channel_index = Integer.parseInt(cbg.getSelectedCheckbox().getName());
+        int r = newChannelColorRed.getState() ?  255 : 0;
+        int g = newChannelColorGreen.getState() ?  255 : 0;
+        int b = newChannelColorBlue.getState() ?  255 : 0;
         if (channel_index == channelsCount - 1) {
             ArrayList<Double> coefficients = channelCoefFields.stream()
                     .map(field -> Double.parseDouble(field.getText()))
                     .collect(Collectors.toCollection(ArrayList::new));
-            myimp.setNewChannel(coefficients);
+            myimp.setNewChannel(coefficients, new Color(r, g, b));
         }
         myimp.setChanel(channel_index);
     }

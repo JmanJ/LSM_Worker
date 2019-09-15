@@ -77,6 +77,7 @@ public class Image2DProcessor{
             curProc = new ByteProcessor(w, h);
         else
             curProc = new ShortProcessor(w, h);
+        curProc.setColorModel(image3DStack.getColorModel());
         float dys1, dys2, dxs;
         int z1, z2, curz;
         for (int y = 0, j = 0; j < latticeH - 1; y+= step, j++) {
