@@ -4,6 +4,7 @@ package MainWindow;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 
@@ -16,12 +17,19 @@ public class Image2DProcessor{
     private int diveValue = 0;
     private ImageProcessor maskProc = null;
     private ImageProcessor curProc = null;
+    private ImageProcessor coloredProc;
     private ImageStack image3DStack;
+    private ImageStack coloredImageStack;
 
-    public ImagePlus calculateSurface(ImageStack stack, int latticeValue, int maxDiff){
-        image3DStack = stack;
-        h = stack.getProcessor(1).getHeight();
-        w = stack.getProcessor(1).getWidth();
+    public Image2DProcessor(ImageStack originalStack, ImageStack coloredImageStack) {
+        this.image3DStack = originalStack;
+        this.coloredImageStack = coloredImageStack;
+        this.coloredProc = new ColorProcessor(coloredImageStack.getWidth(), coloredImageStack.getHeight());
+    }
+
+    public ImagePlus calculateSurface(int latticeValue, int maxDiff){
+        h = image3DStack.getProcessor(1).getHeight();
+        w = image3DStack.getProcessor(1).getWidth();
         if (latticeValue > 0)
             step = latticeValue;
         else
@@ -32,8 +40,8 @@ public class Image2DProcessor{
         int[][] values = new int[latticeW][latticeH];
         boolean[][] isFinalMax = new boolean[latticeW][latticeH];
         int diff;
-        for (int z = 1; z <= stack.getSize(); z++){
-            ImageProcessor curProc = stack.getProcessor(z);
+        for (int z = 1; z <= image3DStack.getSize(); z++){
+            ImageProcessor curProc = image3DStack.getProcessor(z);
             for (int y = 0, j = 0; y < h; y+= step, j++) {
                 for (int x = 0, i = 0; x < w; x+= step, i++) {
                     if (!isFinalMax[i][j]) {
@@ -45,15 +53,15 @@ public class Image2DProcessor{
                             if ((curProc.get(x, y) > values[i][j]) && (!isFinalMax[i][j])) {
                                 values[i][j] = curProc.get(x, y);
                                 lattice[i][j] = z;
-                                if (z != stack.getSize()) {
-                                    diff = stack.getProcessor(z + 1).get(x, y) - stack.getProcessor(z).get(x, y);
+                                if (z != image3DStack.getSize()) {
+                                    diff = image3DStack.getProcessor(z + 1).get(x, y) - image3DStack.getProcessor(z).get(x, y);
                                     if (diff > maxDiff) {
                                         isFinalMax[i][j] = true;
                                         int curZ = z + 1;
-                                        while (curZ != stack.getSize()) {
+                                        while (curZ != image3DStack.getSize()) {
 
-                                            if (stack.getProcessor(curZ + 1).get(x, y) < stack.getProcessor(curZ).get(x, y)){
-                                                values[i][j] = stack.getProcessor(curZ).get(x, y);
+                                            if (image3DStack.getProcessor(curZ + 1).get(x, y) < image3DStack.getProcessor(curZ).get(x, y)){
+                                                values[i][j] = image3DStack.getProcessor(curZ).get(x, y);
                                                 lattice[i][j] = curZ;
                                                 break;
                                             }
@@ -68,7 +76,7 @@ public class Image2DProcessor{
             }
         }
         //System.out.print(Arrays.deepToString(lattice));
-        return constructProcessor(lattice, stack.getSize());
+        return constructProcessor(lattice, image3DStack.getSize());
     }
 
     private ImagePlus constructProcessor(int[][] lattice, int stackSize) {
@@ -121,15 +129,25 @@ public class Image2DProcessor{
     }
 
     public ImageProcessor getCur2DProc(){
+        update2DProcessor(curProc, image3DStack);
+        return curProc;
+    }
+
+    public ImageProcessor getColored2dProc() {
+        update2DProcessor(coloredProc, coloredImageStack);
+        return coloredProc;
+    }
+
+    private void update2DProcessor(ImageProcessor proc, ImageStack original3DImageStack) {
         int zIndex;
         for (int y = 0; y < maskProc.getHeight(); y++)
             for (int x = 0; x < maskProc.getWidth(); x++){
                 zIndex = maskProc.get(x, y) + diveValue;
                 if (zIndex <= 0) zIndex = 1;
-                if (zIndex > image3DStack.getSize()) zIndex = image3DStack.getSize();
-                curProc.set(x, y, image3DStack.getProcessor(zIndex).get(x, y));
+                if (zIndex > original3DImageStack.getSize()) zIndex = original3DImageStack.getSize();
+                proc.set(x, y, original3DImageStack.getProcessor(zIndex).get(x, y));
             }
-        return curProc;
+
     }
 
     public ImageProcessor getMaskProc(){
@@ -145,7 +163,7 @@ public class Image2DProcessor{
     }
 
     public void setImageMask(ImageProcessor newMaskProc){
-        this.maskProc = newMaskProc;
+        maskProc = newMaskProc;
     }
 
 }

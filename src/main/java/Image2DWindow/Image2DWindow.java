@@ -24,7 +24,7 @@ public class Image2DWindow extends ImageWindow implements ActionListener, ItemLi
     private Button buttonMorfSegmentation, buttonSaveTiff, buttonLoadTiff, buttonDiffusion, buttonSmooth, buttonGet2DImage;
     private Label processingLabel, filterSizeLabel, timesLabel, diveLabel;
     private TextField filterSizeField, timesField, diveField;
-    private Checkbox isMaskImage;
+    private Checkbox isMaskImage, isOriginalImage, isColoredImage;
     private CZLSMInfo info;
     protected MorphologicalSegmentation morphologicalSegmentation;
     protected ResultWindow resultWindow;
@@ -42,10 +42,16 @@ public class Image2DWindow extends ImageWindow implements ActionListener, ItemLi
         Panel panel = new Panel();
         panel.setLayout(new FlowLayout(FlowLayout.CENTER));
 
-        isMaskImage = new Checkbox("Image Mask");
-        isMaskImage.setState(false);
+        CheckboxGroup cbg = new CheckboxGroup();
+        isOriginalImage = new Checkbox("2D Surface", cbg, true);
+        isOriginalImage.addItemListener(this);
+        isMaskImage = new Checkbox("Image Mask", cbg, false);
         isMaskImage.addItemListener(this);
+        isColoredImage = new Checkbox("Colored Image", cbg, false);
+        isColoredImage.addItemListener(this);
+        panel.add(isOriginalImage);
         panel.add(isMaskImage);
+        panel.add(isColoredImage);
 
         diveLabel = new Label("Diving value");
         panel.add(diveLabel, BorderLayout.SOUTH);
@@ -95,14 +101,22 @@ public class Image2DWindow extends ImageWindow implements ActionListener, ItemLi
 
     public void itemStateChanged(ItemEvent e)
     {
+        updateImage();
+    }
+
+    private void updateImage() {
         if (isMaskImage.getState()){
             getImagePlus().setProcessor(im2dproc.getMaskProc());
             buttonSmooth.setEnabled(true);
-        }
-        else{
-            im2dproc.setImageMask(getImagePlus().getProcessor());
+            buttonMorfSegmentation.setEnabled(false);
+        } else if (isColoredImage.getState()) {
+            getImagePlus().setProcessor(im2dproc.getColored2dProc());
+            buttonSmooth.setEnabled(false);
+            buttonMorfSegmentation.setEnabled(false);
+        } else if (isOriginalImage.getState()) {
             getImagePlus().setProcessor(im2dproc.getCur2DProc());
             buttonSmooth.setEnabled(false);
+            buttonMorfSegmentation.setEnabled(true);
         }
         repaint();
         requestFocus();
@@ -128,17 +142,9 @@ public class Image2DWindow extends ImageWindow implements ActionListener, ItemLi
         */
         if (b==buttonGet2DImage) {
             im2dproc.setDiveValue(Integer.parseInt(diveField.getText()));
-            if (!isMaskImage.getState()){
-                getImagePlus().setProcessor(im2dproc.getCur2DProc());
-                repaint();
-            }
+            updateImage();
         }
         if (b==buttonSaveTiff){
-            //FileInfo fi = myimp.getOriginalImage().getFileInfo();
-            //imp.setProperty("jmanj", "haha");
-            //imp.setCalibration(myimp.getOriginalImage().getCalibration());
-            //imp.setTitle(imp.getShortTitle() + " ch" + cbg.getSelectedCheckbox().getName());
-            //imp.setFileInfo(fi);
             (new FileSaver(im2dproc.getMaskImage())).saveAsTiff();
         }
 
@@ -151,28 +157,13 @@ public class Image2DWindow extends ImageWindow implements ActionListener, ItemLi
             String path = dir + name;
             ImagePlus new_imp = new ImagePlus(path);
             im2dproc.setImageMask(new_imp.getProcessor());
-            if (isMaskImage.getState()) {
-                getImagePlus().setProcessor(im2dproc.getMaskProc());
-            }
-            else{
-                getImagePlus().setProcessor(im2dproc.getCur2DProc());
-            }
-            repaint();
-            requestFocus();
+            updateImage();
         }
 
         if (b==buttonSmooth) {
             processingLabel.setText("Processing...");
             im2dproc.smooth2DImage(Integer.parseInt(filterSizeField.getText()), Integer.parseInt(timesField.getText()));
-            if (isMaskImage.getState()){
-                getImagePlus().setProcessor(im2dproc.getMaskProc());
-            }
-            else{
-                im2dproc.setImageMask(getImagePlus().getProcessor());
-                getImagePlus().setProcessor(im2dproc.getCur2DProc());
-            }
-            repaint();
-            requestFocus();
+            updateImage();
             processingLabel.setText("Done");
         }
 

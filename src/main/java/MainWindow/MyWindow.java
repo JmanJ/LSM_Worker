@@ -13,6 +13,7 @@ import ij.io.FileSaver;
 import ij.io.OpenDialog;
 import inra.ijpb.plugins.MorphologicalSegmentation;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -28,7 +29,8 @@ public class MyWindow extends StackWindow implements ActionListener, ItemListene
             buttonCutSlices, buttonMorfSegmentation, cutButton, buttonGetFinalResult, to2DImage, getPixGraph;
     private TextField curOffsetX, curOffsetY, curOffsetZ, normalizationParametr, MaxDiffField, latticeSizeField,
             cellSizeField;
-    private Checkbox newChannelColorRed, newChannelColorGreen, newChannelColorBlue;
+    private Checkbox coloredChannel;
+    private JComboBox redChannelBox, greenChannelBox, blueChannelBox;
     private ArrayList<TextField> channelCoefFields;
     private Label processingLabel, labelOffsetX, labelOffsetY, labelOffsetZ, latticeLabel, maxDiffLabel, cellSizeLabel;
     protected int channelsCount;
@@ -166,18 +168,25 @@ public class MyWindow extends StackWindow implements ActionListener, ItemListene
 
         cbg = new CheckboxGroup();
         chs = new ArrayList<Checkbox>(channelsCount);
+        String[] channels = new String[channelsCount];
+        channels[0] = "No";
         for (int i=1; i < channelsCount; i++) {
             Checkbox ch = new Checkbox("Ch" + Integer.toString(i), cbg, i == 1);
             ch.setName(Integer.toString(i - 1));
             ch.addItemListener(this);
+            channels[i] = "Channel " + Integer.toString(i);
             leftMenu.add(ch);
             chs.add(ch);
         }
         Checkbox ch = new Checkbox("New channel", cbg, false);
         ch.setName(Integer.toString(channelsCount - 1));
         ch.addItemListener(this);
+        coloredChannel = new Checkbox("Colored channel", cbg, false);
+        coloredChannel.addItemListener(this);
         leftMenu.add(ch);
+        leftMenu.add(coloredChannel);
         chs.add(ch);
+        chs.add(coloredChannel);
 
         channelCoefFields = new ArrayList<>();
         for (int i=1; i < channelsCount; i++) {
@@ -188,14 +197,19 @@ public class MyWindow extends StackWindow implements ActionListener, ItemListene
             channelCoefFields.add(chCoefField);
         }
 
-        CheckboxGroup newChannelColor = new CheckboxGroup();
-        newChannelColorRed = new Checkbox("Red", newChannelColor, true);
-        newChannelColorGreen = new Checkbox("Green", newChannelColor, false);
-        newChannelColorBlue = new Checkbox("Blue", newChannelColor, false);
 
-        botPanel.add(newChannelColorRed);
-        botPanel.add(newChannelColorGreen);
-        botPanel.add(newChannelColorBlue);
+        redChannelBox = new JComboBox(channels);
+        greenChannelBox = new JComboBox(channels);
+        blueChannelBox = new JComboBox(channels);
+        Label redChannelLabel = new Label("Red");
+        Label greenChannelLabel = new Label("Green");
+        Label blueChannelLabel = new Label("Blue");
+        botPanel.add(redChannelLabel);
+        botPanel.add(redChannelBox);
+        botPanel.add(greenChannelLabel);
+        botPanel.add(greenChannelBox);
+        botPanel.add(blueChannelLabel);
+        botPanel.add(blueChannelBox);
 
         processingLabel = new Label("         ");
         botPanel.add(processingLabel);
@@ -220,17 +234,25 @@ public class MyWindow extends StackWindow implements ActionListener, ItemListene
 
     public void itemStateChanged(ItemEvent e)
     {
-        int channel_index = Integer.parseInt(cbg.getSelectedCheckbox().getName());
-        int r = newChannelColorRed.getState() ?  255 : 0;
-        int g = newChannelColorGreen.getState() ?  255 : 0;
-        int b = newChannelColorBlue.getState() ?  255 : 0;
-        if (channel_index == channelsCount - 1) {
-            ArrayList<Double> coefficients = channelCoefFields.stream()
-                    .map(field -> Double.parseDouble(field.getText()))
-                    .collect(Collectors.toCollection(ArrayList::new));
-            myimp.setNewChannel(coefficients, new Color(r, g, b));
+        processingLabel.setText("Processing...");
+        if (coloredChannel.getState()) {
+            myimp.constructColoredChannel(
+                    redChannelBox.getSelectedIndex() - 1,
+                    greenChannelBox.getSelectedIndex() - 1,
+                    blueChannelBox.getSelectedIndex() - 1
+            );
         }
-        myimp.setChanel(channel_index);
+        else {
+            int channelIndex = Integer.parseInt(cbg.getSelectedCheckbox().getName());
+            if (channelIndex == channelsCount - 1) {
+                ArrayList<Double> coefficients = channelCoefFields.stream()
+                        .map(field -> Double.parseDouble(field.getText()))
+                        .collect(Collectors.toCollection(ArrayList::new));
+                myimp.setNewChannel(coefficients);
+            }
+            myimp.setChanel(channelIndex);
+        }
+        processingLabel.setText("Done.");
     }
 
     public void actionPerformed(ActionEvent e) {

@@ -6,15 +6,15 @@ import ij.ImageStack;
 import ij.process.*;
 
 import java.awt.*;
-import java.awt.image.IndexColorModel;
 import java.util.ArrayList;
 
-import static Utilities.ColorUtilities.getColorPalette;
+import static Utilities.ColorUtilities.getNormalizedColorValue;
 
 public class MyLSMImage{
 
     protected ImagePlus imp;
     protected ImagePlus curImp;
+    private ImageStack coloredChannel;
     protected ArrayList<ImageStack> imageStacks;
     public CZLSMInfo iminfo;
     private int MAX_OFFSET = 15;
@@ -22,12 +22,10 @@ public class MyLSMImage{
     private int DEFAULT_OFFSET = 0;
     private int DEFAULT_CHANEL = 0;
     private String imageTitle = "Current image";
-    protected int start_slice = 1;
-    protected int end_slice = -1;
     protected int offsetX = 0;
     protected int offsetY = 0;
     protected int offsetZ = 0;
-    protected int new_channel_index = -1;
+    protected int newChannelIndex = -1;
     private int chanel = 0;
     private int normalizationP = -1;
     private boolean isDivided = false;
@@ -46,6 +44,7 @@ public class MyLSMImage{
         this.imp = imp;
         this.iminfo = iminfo;
         this.im2Dproc = null;
+        this.coloredChannel = null;
         //this.isOptimized = iminfo.isOptimized;
 
         isGRAY8 = ImagePlus.GRAY8 == this.imp.getType();
@@ -70,11 +69,33 @@ public class MyLSMImage{
     public void constructImage(){
 
         splitChanels();
-        new_channel_index = this.imageStacks.size();
+        newChannelIndex = this.imageStacks.size();
         imageStacks.add(new ImageStack(1,1));
     }
 
-    protected ImageStack calculateDiffrenceStack(ArrayList<Double> coefs, Color imageColor){
+    public void constructColoredChannel(int redColorChannelIndex, int greenColorChannelIndex, int blueColorChannelIndex) {
+        int w = imageStacks.get(0).getWidth();
+        int h = imageStacks.get(0).getHeight();
+        ImageStack coloredStack = new ImageStack(w, h);
+        double maxValue = imp.getDisplayRangeMax();
+        for (int sliceIndex=1; sliceIndex <= imageStacks.get(0).getSize(); sliceIndex++){
+            ImageProcessor imProc = new ColorProcessor(w, h);
+            for (int y=0; y < imProc.getHeight(); y++){
+                for (int x=0; x < imProc.getWidth(); x++){
+                    int r = redColorChannelIndex != -1 ? getNormalizedColorValue(imageStacks.get(redColorChannelIndex).getProcessor(sliceIndex).get(x, y), maxValue) : 0;
+                    int g = greenColorChannelIndex != -1 ? getNormalizedColorValue(imageStacks.get(greenColorChannelIndex).getProcessor(sliceIndex).get(x, y), maxValue) : 0;
+                    int b = blueColorChannelIndex != -1 ? getNormalizedColorValue(imageStacks.get(blueColorChannelIndex).getProcessor(sliceIndex).get(x, y), maxValue) : 0;
+                    imProc.set(x, y, new Color(r, g, b).getRGB());
+                }
+            }
+            coloredStack.addSlice(imProc);
+        }
+
+        coloredChannel = coloredStack;
+        curImp.setStack(coloredChannel);
+    }
+
+    protected ImageStack calculateDiffrenceStack(ArrayList<Double> coefs){
         // calculate new stack like chanle1 - chanel2
         int w = imageStacks.get(0).getWidth();
         int h = imageStacks.get(0).getHeight();
@@ -104,7 +125,7 @@ public class MyLSMImage{
             newDifStack.addSlice(imProc);
         }
 
-        newDifStack.setColorModel(new IndexColorModel(8, 256, getColorPalette(imageColor, 256), 0, false));
+        //newDifStack.setColorModel(new IndexColorModel(8, 256, getColorPalette(imageColor, 256), 0, false));
 
         return newDifStack;
     }
@@ -474,36 +495,36 @@ public class MyLSMImage{
         return average_and_diffusion;
     }
 
-    public void setNewChannel(ArrayList<Double> coefs, Color imageColor){
-        ImageStack newStack = this.calculateDiffrenceStack(coefs, imageColor);
-        imageStacks.set(new_channel_index, newStack);
+    public void setNewChannel(ArrayList<Double> coefs){
+        ImageStack newStack = this.calculateDiffrenceStack(coefs);
+        imageStacks.set(newChannelIndex, newStack);
     }
 
     public void setChanel(int n){
         if (n == -1){
-            this.curImp.setTitle(imageTitle);
-            this.curImp.repaintWindow();
-            this.curImp.getWindow().repaint();
+            curImp.setTitle(imageTitle);
+            curImp.repaintWindow();
+            curImp.getWindow().repaint();
         }
         else {
             imageTitle = this.imp.getShortTitle() + " ch" + String.valueOf(n + 1);
             chanel = n;
         }
-        if (this.curImp != null) {
+        if (curImp != null) {
             //this.curImp.flush();
-            this.curImp.setTitle(imageTitle);
-            this.curImp.setStack(imageStacks.get(chanel));
+            curImp.setTitle(imageTitle);
+            curImp.setStack(imageStacks.get(chanel));
             //this.curImp.updateAndRepaintWindow();
         }
         else {
-            this.curImp = new ImagePlus(imageTitle, imageStacks.get(chanel));
-            this.curImp.repaintWindow();
+            curImp = new ImagePlus(imageTitle, imageStacks.get(chanel));
+            curImp.repaintWindow();
         }
     }
 
     public ImagePlus getImp() {
 
-        return this.curImp;
+        return curImp;
     }
 
     public void setImp(ImagePlus imp) {
@@ -591,9 +612,19 @@ public class MyLSMImage{
     }
 
     public ImagePlus convertTo2DImage(int latticeValue, int maxDiff){
-        im2Dproc = new Image2DProcessor();
+        if (coloredChannel == null) {
+            int r = 0;
+            int g = getOriginalChannelCount() > 1 ? 1 : -1;
+            int b = getOriginalChannelCount() > 2 ? 2 : -1;
+            constructColoredChannel(r, g, b);
+        }
+        im2Dproc = new Image2DProcessor(imageStacks.get(chanel), coloredChannel);
         this.maxDiff = maxDiff;
-        return im2Dproc.calculateSurface(imageStacks.get(chanel), latticeValue, maxDiff);
+        return im2Dproc.calculateSurface(latticeValue, maxDiff);
+    }
+
+    public int getOriginalChannelCount() {
+        return imageStacks.size() - 1; // one channel reserved for new channel
     }
 
     public Image2DProcessor get2DProc(){
