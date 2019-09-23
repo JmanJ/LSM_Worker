@@ -18,5 +18,14 @@ public class ColorUtilities {
         }
         return cmap;
     }
+
+    public static int getNormalizedColorValue(int value, double maxValue) {
+        if (maxValue == 0)
+            return 0;
+        int colorValue = (int) ((value / maxValue) * 255);
+        if (colorValue > 255)
+            colorValue = 255;
+        return colorValue;
+    }
 }
 
