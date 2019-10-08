@@ -40,7 +40,13 @@ public class Image2DWindow extends ImageWindow implements ActionListener, ItemLi
 
     public void addPanel(){
         Panel panel = new Panel();
-        panel.setLayout(new FlowLayout(FlowLayout.CENTER));
+        panel.setLayout(new BorderLayout());
+
+        Panel changeImagePanel = new Panel();
+        changeImagePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+
+        Panel optionPanel = new Panel();
+        optionPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
 
         CheckboxGroup cbg = new CheckboxGroup();
         isOriginalImage = new Checkbox("2D Surface", cbg, true);
@@ -49,51 +55,54 @@ public class Image2DWindow extends ImageWindow implements ActionListener, ItemLi
         isMaskImage.addItemListener(this);
         isColoredImage = new Checkbox("Colored Image", cbg, false);
         isColoredImage.addItemListener(this);
-        panel.add(isOriginalImage);
-        panel.add(isMaskImage);
-        panel.add(isColoredImage);
+        changeImagePanel.add(isOriginalImage);
+        changeImagePanel.add(isMaskImage);
+        changeImagePanel.add(isColoredImage);
 
         diveLabel = new Label("Diving value");
-        panel.add(diveLabel, BorderLayout.SOUTH);
+        changeImagePanel.add(diveLabel);
         diveField = new TextField("0");
-        panel.add(diveField, BorderLayout.SOUTH);
+        changeImagePanel.add(diveField);
         buttonGet2DImage = new Button("Update");
         buttonGet2DImage.addActionListener(this);
-        panel.add(buttonGet2DImage);
+        changeImagePanel.add(buttonGet2DImage);
 
         buttonMorfSegmentation = new Button("MorfSegmentation");
         buttonMorfSegmentation.addActionListener(this);
-        panel.add(buttonMorfSegmentation);
+        optionPanel.add(buttonMorfSegmentation);
 
         buttonDiffusion = new Button("Diffusion");
         buttonDiffusion.addActionListener(this);
-        panel.add(buttonDiffusion);
+        optionPanel.add(buttonDiffusion);
         buttonDiffusion.setEnabled(false);
 
         filterSizeLabel = new Label("Filter size (0, 1, 2):");
-        panel.add(filterSizeLabel, BorderLayout.SOUTH);
+        optionPanel.add(filterSizeLabel, BorderLayout.SOUTH);
         filterSizeField = new TextField("1");
-        panel.add(filterSizeField, BorderLayout.SOUTH);
+        optionPanel.add(filterSizeField, BorderLayout.SOUTH);
         timesLabel = new Label("Times:");
-        panel.add(timesLabel, BorderLayout.SOUTH);
+        optionPanel.add(timesLabel, BorderLayout.SOUTH);
         timesField = new TextField("5");
-        panel.add(timesField, BorderLayout.SOUTH);
+        optionPanel.add(timesField, BorderLayout.SOUTH);
 
         buttonSmooth = new Button("Smooth");
         buttonSmooth.addActionListener(this);
-        panel.add(buttonSmooth, BorderLayout.SOUTH);
+        optionPanel.add(buttonSmooth, BorderLayout.SOUTH);
         buttonSmooth.setEnabled(false);
 
         buttonSaveTiff = new Button("Save");
         buttonSaveTiff.addActionListener(this);
-        panel.add(buttonSaveTiff);
+        optionPanel.add(buttonSaveTiff);
 
         buttonLoadTiff = new Button("Load");
         buttonLoadTiff.addActionListener(this);
-        panel.add(buttonLoadTiff);
+        optionPanel.add(buttonLoadTiff);
 
         processingLabel = new Label("         ");
-        panel.add(processingLabel);
+
+        panel.add(changeImagePanel, BorderLayout.NORTH);
+        panel.add(optionPanel, BorderLayout.CENTER);
+        panel.add(processingLabel, BorderLayout.SOUTH);
 
         add(panel, BorderLayout.CENTER);
         pack();

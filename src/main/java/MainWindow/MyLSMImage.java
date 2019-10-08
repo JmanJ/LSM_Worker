@@ -618,7 +618,7 @@ public class MyLSMImage{
             int b = getOriginalChannelCount() > 2 ? 2 : -1;
             constructColoredChannel(r, g, b);
         }
-        im2Dproc = new Image2DProcessor(imageStacks.get(chanel), coloredChannel);
+        im2Dproc = new Image2DProcessor(imageStacks.get(chanel), coloredChannel.duplicate());
         this.maxDiff = maxDiff;
         return im2Dproc.calculateSurface(latticeValue, maxDiff);
     }
