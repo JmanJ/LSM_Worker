@@ -236,6 +236,7 @@ public class MyWindow extends StackWindow implements ActionListener, ItemListene
     {
         processingLabel.setText("Processing...");
         if (coloredChannel.getState()) {
+            buttonMorfSegmentation.setEnabled(false);
             myimp.constructColoredChannel(
                     redChannelBox.getSelectedIndex() - 1,
                     greenChannelBox.getSelectedIndex() - 1,
@@ -243,6 +244,7 @@ public class MyWindow extends StackWindow implements ActionListener, ItemListene
             );
         }
         else {
+            buttonMorfSegmentation.setEnabled(true);
             int channelIndex = Integer.parseInt(cbg.getSelectedCheckbox().getName());
             if (channelIndex == channelsCount - 1) {
                 ArrayList<Double> coefficients = channelCoefFields.stream()
